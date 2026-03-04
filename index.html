@@ -15,7 +15,6 @@
       font-family: Arial, sans-serif;
     }
 
-    /* BIG SOUND BUTTON */
     #tapLayer {
       position: fixed;
       inset: 0;
@@ -46,7 +45,6 @@
 
 <body>
 
-<!-- BIG TAP OVERLAY -->
 <div id="tapLayer">
   <div id="tapButton">
     <span>🔊</span>
@@ -73,8 +71,8 @@
 
   <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-  <a-entity mindar-image-target="targetIndex: 0">
-    <a-video src="#video" width="1" height="0.56"></a-video>
+  <a-entity id="target" mindar-image-target="targetIndex: 0">
+    <a-video id="ar-video" src="#video" position="0 0 0"></a-video>
   </a-entity>
 
 </a-scene>
@@ -82,19 +80,35 @@
 <script>
   const video = document.getElementById("video");
   const tapLayer = document.getElementById("tapLayer");
+  const target = document.getElementById("target");
+  const arVideo = document.getElementById("ar-video");
 
-  // ONE user interaction unlocks sound
+  // 1. Calculate and set the original resolution size/aspect ratio
+  video.addEventListener('loadedmetadata', () => {
+    const aspectRatio = video.videoWidth / video.videoHeight;
+    // We keep the width relative to the target size (1) and scale the height proportionally
+    arVideo.setAttribute('width', 1);
+    arVideo.setAttribute('height', 1 / aspectRatio);
+  });
+
+  // 2. Unlock sound and video element on mobile browsers
   tapLayer.addEventListener("click", () => {
     video.muted = false;
-    video.play();
+    
+    // Briefly play and pause to unlock media playback rules on iOS/Android
+    video.play().then(() => {
+      video.pause();
+    }).catch(() => {});
+    
     tapLayer.style.display = "none";
   }, { once: true });
 
-  document.addEventListener("targetFound", () => {
+  // 3. Attach AR tracking events to the target entity, not the document
+  target.addEventListener("targetFound", () => {
     video.play().catch(() => {});
   });
 
-  document.addEventListener("targetLost", () => {
+  target.addEventListener("targetLost", () => {
     video.pause();
   });
 </script>
